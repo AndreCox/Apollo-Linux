@@ -499,9 +499,28 @@ jobs:
           # Create tarball for RPM
           mkdir -p apollo-${VERSION}/usr/bin
           mkdir -p apollo-${VERSION}/usr/share/apollo
-          cp build/sunshine* apollo-${VERSION}/usr/bin/apollo 2>/dev/null || true
-          chmod 755 apollo-${VERSION}/usr/bin/apollo 2>/dev/null || true
-          cp -r build/assets/* apollo-${VERSION}/usr/share/apollo/ 2>/dev/null || true
+          
+          # Find and copy the binary (could be named sunshine or apollo)
+          if [ -f build/sunshine ]; then
+            cp build/sunshine apollo-${VERSION}/usr/bin/apollo
+          elif [ -f build/apollo ]; then
+            cp build/apollo apollo-${VERSION}/usr/bin/apollo
+          else
+            echo "ERROR: Binary not found!"
+            find build -name "sunshine*" -o -name "apollo*" | head -20
+            exit 1
+          fi
+          
+          chmod 755 apollo-${VERSION}/usr/bin/apollo
+          
+          # Copy assets
+          if [ -d build/assets ]; then
+            cp -r build/assets/* apollo-${VERSION}/usr/share/apollo/
+          fi
+          
+          # Verify binary was copied
+          ls -lh apollo-${VERSION}/usr/bin/
+          
           tar -czvf ~/rpmbuild/SOURCES/apollo-${VERSION}.tar.gz apollo-${VERSION}
           
           cat > ~/rpmbuild/SPECS/apollo.spec << 'EOF'
@@ -523,27 +542,19 @@ jobs:
           %install
           mkdir -p %{buildroot}/usr/bin
           mkdir -p %{buildroot}/usr/share/apollo
-          cp -r usr/bin/* %{buildroot}/usr/bin/ || true
-          cp -r usr/share/apollo/* %{buildroot}/usr/share/apollo/ || true
+          cp usr/bin/apollo %{buildroot}/usr/bin/apollo
+          cp -r usr/share/apollo/* %{buildroot}/usr/share/apollo/
 
           %files
           %attr(755,root,root) /usr/bin/apollo
-          /usr/share/apollo
+          /usr/share/apollo/*
 
           %post
           setcap cap_sys_admin+p /usr/bin/apollo || true
           EOF
           
-          rpmbuild -bb ~/rpmbuild/SPECS/apollo.spec || echo "RPM build had issues"
+          rpmbuild -bb ~/rpmbuild/SPECS/apollo.spec
           cp ~/rpmbuild/RPMS/*/*.rpm . 2>/dev/null || true
-
-      - name: Upload RPM
-        uses: actions/upload-artifact@v4
-        with:
-          name: apollo-rpm
-          path: "*.rpm"
-          retention-days: 30
-          if-no-files-found: ignore
 
   # ===========================================
   # Create Release (on tag)
