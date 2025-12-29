@@ -202,6 +202,7 @@ jobs:
             opus \
             ffmpeg \
             libdrm \
+            libgbm \
             wayland \
             libx11 \
             libxrandr \
@@ -315,6 +316,7 @@ jobs:
             libsystemd-dev \
             libminiupnpc-dev \
             libicu-dev \
+            libgbm-dev \
             libnuma-dev \
             dpkg-dev \
             debhelper \
@@ -464,7 +466,8 @@ jobs:
             numactl-devel \
             rpm-build \
             nodejs \
-            npm
+            npm \
+            mesa-libgbm-devel
 
       - name: Checkout
         uses: actions/checkout@v4
